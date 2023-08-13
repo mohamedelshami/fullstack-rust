@@ -16,7 +16,7 @@ serde = "1.0.183"
 tokio = { version = "1.24.2", features = ["full"] }
 tokio-stream = "0.1.14"
 tower = { version = "0.4.13", features = ["timeout"] }
-tower-http = { version = "0.4.3", features = ["trace"] }
+tower-http = { version = "0.4.3", features = ["trace", "cors"] }
 tracing = "0.1.37"
 tracing-subscriber = "0.3.17"
 uuid = { version = "1.2.2", features = ["v4", "serde"] }

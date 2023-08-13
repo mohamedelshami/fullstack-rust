@@ -9,7 +9,7 @@ use mongodb::{
     Client, Collection,
 };
 
-use crate::models::transaction::{Transaction, self};
+use crate::models::transaction::Transaction;
 use crate::models::user::User;
 
 use futures::StreamExt;
