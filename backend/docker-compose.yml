@@ -1,0 +1,32 @@
+version: "3.6"
+services:  
+  mongodb:
+    image: mongo:6.0.8
+    environment:
+      - COMPOSE_HTTP_TIMEOUT=900
+      - DOCKER_CLIENT_TIMEOUT=900
+    entrypoint: mongod --bind_ip "0.0.0.0"
+    networks:
+      - carbon-net
+  
+  backend:
+    image: carbon-sim:latest
+    environment:
+      - SERVER=0.0.0.0:8787
+      - MONGOURI=mongodb://mongodb:27017
+      - RUST_LOG=info,tower_http=trace
+    depends_on:
+      - mongodb
+    networks:
+      - carbon-net
+    ports:
+      - 8787:8787
+
+networks:
+  carbon-net:
+    name: carbon-net
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.16.239.0/24

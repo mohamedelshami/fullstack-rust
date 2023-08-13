@@ -28,7 +28,7 @@ curl -X POST \
 curl -X POST \
   -H "Content-Type: application/json" \
   -d '{"name": "Alice", "user_id": "alice", "balance": 1000}' \
-  http://localhost:8080/users/create
+  http://localhost:8787/users/create
 
 curl -X POST \
   -H "Content-Type: application/json" \

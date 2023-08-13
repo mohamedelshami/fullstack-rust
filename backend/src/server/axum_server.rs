@@ -26,7 +26,7 @@ pub async fn start(db: repository::mongodb_repo::MongoRepo) {
         .parse()
         .expect("Define SERVER=host:port in your .env");
 
-    println!("Launching server: http://{server_addr}/");
+    info!("Launching server: http://{server_addr}/");
 
     let cors = CorsLayer::new()
         // allow `GET` and `POST` when accessing the resource

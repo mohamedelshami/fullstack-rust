@@ -1,17 +1,21 @@
-FROM rust:latest as build
+FROM rust:1.71.1 as build
 
-RUN rustup target add wasm32-uknown-uknown
-RUN cargo install trunk wasm-bingen-cli
+RUN rustup target add wasm32-unknown-unknown
 
-WORKDIR /usr/src/simple-ms-rust
+WORKDIR /usr/src/carbon-sim
 COPY . .
 
 RUN cargo build --release
 
 FROM gcr.io/distroless/cc-debian10
-
-COPY --from=build /usr/src/<>/target/release/simple-ms /usr/local/bin/simple-ms
-COPY --from=build /usr/src/<>/frontend/dist /usr/local/bin/dist
+COPY --from=build /usr/src/carbon-sim/target/release/carbon-sim /usr/local/bin/carbon-sim
 
 WORKDIR /usr/local/bin
-CMD ["backend"]
+
+ENV SERVER=0.0.0.0:8787
+ENV RUST_LOG=info,tower_http=trace
+ENV MONGOURI=mongodb://carbon-db:27017
+ENV RUST_LOG=mongodb::command=debug
+
+EXPOSE 8787
+CMD ["carbon-sim"]

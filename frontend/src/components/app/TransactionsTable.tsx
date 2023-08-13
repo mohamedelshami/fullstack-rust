@@ -1,4 +1,3 @@
-"use client";
 import Link from "next/link";
 import React, { useState, useEffect } from "react";
 
@@ -17,8 +16,9 @@ const TransactionsTable: React.FC = () => {
   const [transactions, setTransactions] = useState<ITransaction[] | null>(null);
   const [error, setError] = useState<Error | null>(null);
 
+  //console.log(`http://${publicRuntimeConfig}/transactions`)
   useEffect(() => {
-    fetch("http://127.0.0.1:8080/transactions", {
+    fetch(`http://localhost:8787/transactions`, {
       /*headers: {
           'Content-Type': 'application/json', // TODO: Allow json content type in Axum Cors policy
         },*/

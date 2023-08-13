@@ -1,6 +1,7 @@
 "use client";
 import Link from "next/link";
 import React, { useState, useEffect } from "react";
+import process from "process";
 
 // Define TypeScript interfaces
 interface IUser {
@@ -17,7 +18,7 @@ const ClientUsersTable: React.FC = () => {
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
-    fetch("http://127.0.0.1:8080/users", {
+    fetch(`http://localhost:8787/users`, {
       /*headers: {
           'Content-Type': 'application/json', // TODO: Allow json content type in Axum Cors policy
         },*/
