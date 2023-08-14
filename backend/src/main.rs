@@ -1,5 +1,4 @@
-use dotenv::dotenv;
-use tracing::{debug, error, info};
+use tracing::info;
 
 mod api;
 mod models;

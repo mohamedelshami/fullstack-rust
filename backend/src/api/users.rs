@@ -10,7 +10,7 @@ use api_error::ApiErrorResponse;
 pub async fn create(
     State(db): State<MongoRepo>,
     new_user: Json<User>,
-) -> Result<Json<InsertOneResult>, ApiErrorResponse> {
+) -> Result<Json<String>, ApiErrorResponse> {
     debug!("Creating new user");
     let data = User {
         id: None,

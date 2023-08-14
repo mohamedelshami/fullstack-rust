@@ -12,7 +12,7 @@ use mongodb::{
 };
 
 use crate::models::user::User;
-use crate::models::{transaction::Transaction, user};
+use crate::models::transaction::Transaction;
 
 use futures::StreamExt;
 
@@ -51,7 +51,7 @@ impl MongoRepo {
         }
     }
 
-    pub async fn create_user(&self, new_user: User) -> Result<InsertOneResult, Error> {
+    pub async fn create_user(&self, new_user: User) -> Result<String, Error> {
         let new_doc = User {
             id: None,
             name: new_user.name,
@@ -59,9 +59,15 @@ impl MongoRepo {
             balance: new_user.balance,
         };
 
-        let user = self.user_collection.insert_one(new_doc, None).await?;
+        let result = self.user_collection.insert_one(new_doc, None).await?;
 
-        Ok(user)
+        match result.inserted_id {
+            mongodb::bson::Bson::ObjectId(oid) => {
+                Ok(oid.to_string())
+            }
+            _ => Err(Error::custom("Error creating user")),
+        }
+     
     }
 
     pub async fn get_user(&self, user_id: &String) -> Result<Option<User>, Error> {

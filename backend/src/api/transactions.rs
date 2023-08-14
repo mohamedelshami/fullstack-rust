@@ -11,9 +11,6 @@ use crate::{
 use super::api_error;
 use api_error::ApiErrorResponse;
 
-use mongodb::error::Error;
-use mongodb::error::ErrorKind;
-
 pub async fn transfer(
     State(db): State<MongoRepo>,
     new_tx: Json<Transaction>,
@@ -35,46 +32,11 @@ pub async fn transfer(
             code: StatusCode::INTERNAL_SERVER_ERROR,
             error_message: err.to_string(),
         }),
+        // TODO: Implement custom server errors to handle custom error scenarios
+        // Err(err) => match err.kind.as_ref() {
+          //  ErrorKind::Custom { .. } => {}
     }
 }
-
-/*pub async fn transfer(
-    State(db): State<MongoRepo>,
-    new_tx: Json<Transaction>,
-) -> Result<Json<InsertOneResult>, ApiErrorResponse> {
-    debug!("Transfer transaction");
-    let data: Transaction = Transaction {
-        id: None,
-        sender: new_tx.sender.to_owned(),
-        receiver: new_tx.receiver.to_owned(),
-        amount: new_tx.amount.to_owned(),
-        transaction_type: Some(TransactionType::Transfer),
-    };
-
-    let tx_detail = db.create_transaction(data);
-
-    match tx_detail.await {
-        Ok(tx) => Ok(Json(tx)),
-
-        Err(err) => match err.kind.as_ref() {
-            ErrorKind::Custom { .. } => {
-                return Err(ApiErrorResponse {
-                    code: StatusCode::INTERNAL_SERVER_ERROR,
-                    error_message: err
-                        .get_custom::<mongodb::error::Error>()
-                        .unwrap()
-                        .to_string(),
-                });
-            }
-            _ => {
-                return Err(ApiErrorResponse {
-                    code: StatusCode::INTERNAL_SERVER_ERROR,
-                    error_message: err.to_string(),
-                });
-            }
-        },
-    }
-}*/
 
 pub async fn get(
     State(db): State<MongoRepo>,
