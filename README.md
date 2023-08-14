@@ -74,9 +74,11 @@ This procedure will initiate and run the services in the foreground. Ensure you 
 
 <img width="1405" alt="Screenshot 2023-08-14 at 18 14 16" src="https://github.com/mohamedelshami/carbon-sim/assets/1651925/228e9824-417f-4903-baf9-bdac26ff0a92">
 
+Open your web browser and navigate to:
 
-## API Reference
-
+```
+http://localhost:3000
+```
 
 ## API Reference
 
