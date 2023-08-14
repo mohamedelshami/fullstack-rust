@@ -39,3 +39,20 @@ curl -X POST \
   -H "Content-Type: application/json" \
   -d '{"sender": "bob", "receiver": "john", "balance": 1000, "amount": 10}' \
   http://localhost:8080/transactions/transfer
+
+
+  curl -X POST \
+  -H "Content-Type: application/json" \
+  -d '{"name": "Bob", "user_id": "bob", "balance": 1000}' \
+  http://localhost:8787/users/create
+
+curl -X POST \
+  -H "Content-Type: application/json" \
+  -d '{"sender": "bob", "receiver": "john", "balance": 1000, "amount": 10}' \
+  http://localhost:8787/transactions/transfer
+
+
+curl -X POST \
+  -H "Content-Type: application/json" \
+  -d '{"sender": "dave", "receiver": "john", "balance": 10000, "amount": 10}' \
+  http://localhost:8787/transactions/transfer
