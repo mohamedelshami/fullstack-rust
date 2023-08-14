@@ -1,16 +1,18 @@
-use std::{env};
+use std::env;
 extern crate dotenv;
 
 use dotenv::dotenv;
 
 use mongodb::{
-    bson::{doc, extjson::de::Error, oid::ObjectId},
+    bson::{doc, oid::ObjectId},
+    error::Error,
+    options::IndexOptions,
     results::InsertOneResult,
-    Client, Collection,
+    Client, Collection, IndexModel,
 };
 
-use crate::models::transaction::Transaction;
 use crate::models::user::User;
+use crate::models::{transaction::Transaction, user};
 
 use futures::StreamExt;
 
@@ -31,8 +33,20 @@ impl MongoRepo {
         let client = Client::with_uri_str(uri).await.unwrap();
         let db = client.database("test");
 
+        let model = IndexModel::builder()
+            .keys(doc! { "user_id": 1 })
+            .options(IndexOptions::builder().unique(true).build())
+            .build();
+
+        let user_col = db.collection("User");
+
+        user_col
+            .create_index(model, None)
+            .await
+            .expect("Error creating index for user_id");
+
         MongoRepo {
-            user_collection: db.collection("User"),
+            user_collection: user_col,
             transaction_collection: db.collection("Transaction"),
         }
     }
@@ -45,37 +59,18 @@ impl MongoRepo {
             balance: new_user.balance,
         };
 
-        let user = self
-            .user_collection
-            .insert_one(new_doc, None)
-            .await
-            .ok()
-            .expect("Error creating user");
+        let user = self.user_collection.insert_one(new_doc, None).await?;
 
         Ok(user)
     }
 
-    pub async fn get_user_by_id(&self, id: &String) -> Result<User, Error> {
-        let obj_id = ObjectId::parse_str(id).unwrap();
-        let filter = doc! {"_id": obj_id};
-        let user_detail = self
-            .user_collection
-            .find_one(filter, None)
-            .await
-            .ok()
-            .expect("Error getting user's detail");
-        Ok(user_detail.unwrap())
-    }
-
-    pub async fn get_user(&self, user_id: &String) -> Result<User, Error> {
+    pub async fn get_user(&self, user_id: &String) -> Result<Option<User>, Error> {
         let user_detail = self
             .user_collection
             .find_one(doc! { "user_id": user_id,}, None)
-            .await
-            .ok()
-            .expect("Error getting sender detail for user_id {}");
+            .await?;
 
-        Ok(user_detail.unwrap())
+        Ok(user_detail)
     }
 
     pub async fn get_all_users(&self) -> Result<Vec<User>, Error> {
@@ -92,12 +87,7 @@ impl MongoRepo {
     pub async fn get_transaction(&self, id: &String) -> Result<Transaction, Error> {
         let obj_id = ObjectId::parse_str(id).unwrap();
         let filter = doc! {"_id": obj_id};
-        let tx_detail = self
-            .transaction_collection
-            .find_one(filter, None)
-            .await
-            .ok()
-            .expect("Error getting sender detail for user_id {}");
+        let tx_detail = self.transaction_collection.find_one(filter, None).await?;
 
         Ok(tx_detail.unwrap())
     }
@@ -126,77 +116,64 @@ impl MongoRepo {
             .transaction_collection
             .client()
             .start_session(None)
-            .await
-            .ok()
-            .expect("Error starting MongoDB session");
+            .await?;
 
-        session
-            .start_transaction(None)
-            .await
-            .ok()
-            .expect("Error starting commit transaction");
+        session.start_transaction(None).await?;
+
+        let sender_id = new_doc.sender.clone();
 
         let sender_filter = doc! { "user_id": new_doc.sender.clone() };
         let receiver_filter = doc! { "user_id": new_doc.receiver.clone() };
 
-        let sender = self
-            .user_collection
-            .find_one(sender_filter.clone(), None)
-            .await
-            .ok()
-            .expect("Error getting sender detail for user_id {}");
-
-        if let Some(sender_doc) = sender {
-            if sender_doc.balance < new_doc.amount {
-                // Insufficient funds, aborting the transaction
-                let _ = session.abort_transaction().await;
-                panic!(
-                    "Transaction aborted insufficient balance for user {}",
-                    sender_doc.user_id
-                );
+        let sender;
+        match self.get_user(&sender_id).await {
+            Ok(Some(user)) => {
+                sender = user;
             }
-
-            // Deduct from sender
-            let update_sender = doc! {
-                "$inc": { "balance": -new_doc.amount }
-            };
-
-            self.user_collection
-                .update_one(sender_filter, update_sender, None)
-                .await
-                .ok()
-                .expect(&format!(
-                    "Error updating balance for user_id {}",
-                    sender_doc.user_id
-                ));
-
-            // Add to receiver
-            let update_receiver = doc! {
-                "$inc": { "balance": new_doc.amount }
-            };
-
-            self.user_collection
-                .update_one(receiver_filter, update_receiver, None)
-                .await
-                .ok()
-                .expect(&format!(
-                    "Error updating balance for user_id {}",
-                    sender_doc.user_id
-                ));
+            Ok(None) => {
+                let _ = session.abort_transaction().await;
+                return Err(Error::custom(format!("Sender id {} not found", sender_id)));
+            }
+            Err(e) => {
+                let _ = session.abort_transaction().await;
+                return Err(e);
+            }
         }
+
+        if sender.balance < new_doc.amount {
+            // Insufficient funds, aborting the transaction
+            let _ = session.abort_transaction().await;
+
+            return Err(Error::custom(format!(
+                "Transaction aborted insufficient balance for user {}",
+                sender_id
+            )));
+        }
+
+        // Deduct from sender balance
+        let update_sender = doc! {
+            "$inc": { "balance": -new_doc.amount }
+        };
+
+        self.user_collection
+            .update_one(sender_filter, update_sender, None)
+            .await?;
+
+        // Add to receiver balance
+        let update_receiver = doc! {
+            "$inc": { "balance": new_doc.amount }
+        };
+
+        self.user_collection
+            .update_one(receiver_filter, update_receiver, None)
+            .await?;
 
         let tx = self
             .transaction_collection
             .insert_one(new_doc, None)
-            .await
-            .ok()
-            .expect("Error creating transaction");
+            .await?;
 
-        session
-            .commit_transaction()
-            .await
-            .ok()
-            .expect("Commit transaction failed");
+        session.commit_transaction().await?;
 
         Ok(tx)
     }
