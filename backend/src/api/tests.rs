@@ -1,4 +1,5 @@
 use crate::models::user::User;
+use bson::oid::ObjectId;
 use mockall::{predicate::*, mock};
 use mongodb::error::Error;
 

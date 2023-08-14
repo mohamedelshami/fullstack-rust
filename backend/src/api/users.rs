@@ -1,7 +1,6 @@
 use crate::{models::user::User, repository::mongodb_repo::MongoRepo};
 use axum::extract::Path;
 use axum::{extract::State, http::StatusCode, Json};
-use mongodb::results::InsertOneResult;
 use tracing::debug;
 
 use super::api_error;
