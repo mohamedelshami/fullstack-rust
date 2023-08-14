@@ -72,6 +72,9 @@ To execute these services, navigate to the root directory of the project and iss
 
 This procedure will initiate and run the services in the foreground. Ensure you monitor the console output for any potential issues or confirmations of successful service launches.
 
+<img width="1405" alt="Screenshot 2023-08-14 at 18 14 16" src="https://github.com/mohamedelshami/carbon-sim/assets/1651925/228e9824-417f-4903-baf9-bdac26ff0a92">
+
+
 ## API Reference
 
 
