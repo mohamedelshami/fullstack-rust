@@ -1,5 +1,4 @@
 use crate::models::user::User;
-use bson::oid::ObjectId;
 use mockall::{predicate::*, mock};
 use mongodb::error::Error;
 
@@ -46,7 +45,7 @@ async fn test_get() {
     .withf(move |id| id == "1")
     .returning(|_| {
         let result = Option::Some(User {
-            id: Some(ObjectId::parse_str("64da237125323006deed0cdc").unwrap()),
+            id: Some(bson::oid::ObjectId::parse_str("64da237125323006deed0cdc").unwrap()),
             name: "Alice".to_owned(),
             user_id: "1".to_owned(),
             balance: 1000.,

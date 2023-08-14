@@ -22,17 +22,23 @@ pub struct MongoRepo {
     transaction_collection: Collection<Transaction>,
 }
 
+/// Implementation for repository for MongoDB operations.
 impl MongoRepo {
+    /// Initializes and returns a new `MongoRepo` instance.
+    /// 
+    /// Loads the MongoDB URI from environment variables, connects to the MongoDB client, and sets up the schemeless collections and indexes. 
     pub async fn init() -> Self {
+        // Load environment variables
         dotenv().ok();
         let uri = match env::var("MONGOURI") {
             Ok(v) => v.to_string(),
-            Err(_) => format!("Error loading env variable"),
+            Err(_) => "Error loading env variable".to_string(),
         };
 
         let client = Client::with_uri_str(uri).await.unwrap();
         let db = client.database("test");
 
+         // Create an index on the user_id field of the User collection
         let model = IndexModel::builder()
             .keys(doc! { "user_id": 1 })
             .options(IndexOptions::builder().unique(true).build())
@@ -40,6 +46,7 @@ impl MongoRepo {
 
         let user_col = db.collection("User");
 
+         // Create User collection index
         user_col
             .create_index(model, None)
             .await
@@ -51,6 +58,7 @@ impl MongoRepo {
         }
     }
 
+    /// Inserts a new user into the database.
     pub async fn create_user(&self, new_user: User) -> Result<String, Error> {
         let new_doc = User {
             id: None,
@@ -70,6 +78,7 @@ impl MongoRepo {
      
     }
 
+    /// Fetches a user based on the user_id.
     pub async fn get_user(&self, user_id: &String) -> Result<Option<User>, Error> {
         let user_detail = self
             .user_collection
@@ -79,6 +88,7 @@ impl MongoRepo {
         Ok(user_detail)
     }
 
+    /// Fetches all users from the database.
     pub async fn get_all_users(&self) -> Result<Vec<User>, Error> {
         let mut cursor = self.user_collection.find(None, None).await.unwrap();
         let mut users: Vec<User> = Vec::new();
@@ -90,6 +100,7 @@ impl MongoRepo {
         Ok(users)
     }
 
+    /// Fetches all transactions from the database.
     pub async fn get_transaction(&self, id: &String) -> Result<Transaction, Error> {
         let obj_id = ObjectId::parse_str(id).unwrap();
         let filter = doc! {"_id": obj_id};
@@ -109,6 +120,9 @@ impl MongoRepo {
         Ok(transactions)
     }
 
+    /// Inserts a new transaction into the database.
+    /// 
+    /// If the sender has insufficient funds, the transaction is aborted.
     pub async fn create_transaction(&self, new_tx: Transaction) -> Result<InsertOneResult, Error> {
         let new_doc: Transaction = Transaction {
             id: None,
@@ -179,6 +193,7 @@ impl MongoRepo {
             .insert_one(new_doc, None)
             .await?;
 
+        // Commit transaction
         session.commit_transaction().await?;
 
         Ok(tx)

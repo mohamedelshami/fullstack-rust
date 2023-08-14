@@ -9,8 +9,6 @@ use repository::mongodb_repo::MongoRepo;
 
 #[tokio::main]
 async fn main() {
-    //dotenv().expect("Set your configuration in .env file");
-
     dotenv::from_path(".env").ok(); // Don't fail if .env is not provided, instead source env from the host environment
 
     let db = MongoRepo::init();

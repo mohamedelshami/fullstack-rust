@@ -1,4 +1,5 @@
 use crate::{models::user::User, repository::mongodb_repo::MongoRepo};
+/// This module defines the API endpoints for users.
 use axum::extract::Path;
 use axum::{extract::State, http::StatusCode, Json};
 use tracing::debug;
@@ -6,6 +7,9 @@ use tracing::debug;
 use super::api_error;
 use api_error::ApiErrorResponse;
 
+/// This endpoint creates a new user from a given json with user details.
+///
+/// Returns new object idea if user is created successfully.
 pub async fn create(
     State(db): State<MongoRepo>,
     new_user: Json<User>,
@@ -29,6 +33,9 @@ pub async fn create(
     }
 }
 
+/// This endpoint retrieves the details of a user by ID.
+///
+/// The `id` path parameter must be a non-empty string.
 pub async fn get(
     State(db): State<MongoRepo>,
     Path(id): Path<String>,
@@ -55,6 +62,8 @@ pub async fn get(
     }
 }
 
+/// This endpoint retrieves all users.
+/// TODO: impelement pagination
 pub async fn list(State(db): State<MongoRepo>) -> Result<Json<Vec<User>>, ApiErrorResponse> {
     debug!("Retrieving all user details");
 
